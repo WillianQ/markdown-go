@@ -1,0 +1,38 @@
+{
+  "name": "markdown-go",
+  "version": "0.1.0",
+  "description": "插件式 Markdown 渲染引擎：标题编号 / TOC / 表格 / 列表 / 代码高亮 / KaTeX 公式 / ECharts 图表，纯字符串输出",
+  "type": "module",
+  "license": "MIT",
+  "main": "./markdown-go.js",
+  "exports": {
+    ".": "./markdown-go.js"
+  },
+  "files": [
+    "*.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node test/table-escape.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "markdown",
+    "markdown-parser",
+    "markdown-renderer",
+    "html",
+    "katex",
+    "echarts",
+    "highlight.js",
+    "toc"
+  ],
+  "author": "WillianQ",
+  "dependencies": {
+    "echarts": "^5.5.0",
+    "highlight.js": "^11.9.0",
+    "katex": "^0.16.10"
+  }
+}
