@@ -32,6 +32,14 @@
     "toc"
   ],
   "author": "WillianQ",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WillianQ/markdown-go.git"
+  },
+  "homepage": "https://github.com/WillianQ/markdown-go#readme",
+  "bugs": {
+    "url": "https://github.com/WillianQ/markdown-go/issues"
+  },
   "dependencies": {
     "echarts": "^5.5.0",
     "highlight.js": "^11.9.0",
