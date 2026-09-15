@@ -267,4 +267,4 @@ $$\frac{1}{2} + \alpha$$
 
 ## License
 
-[MIT](./LICENSE)
+[MIT](https://github.com/WillianQ/markdown-go/blob/main/LICENSE)
