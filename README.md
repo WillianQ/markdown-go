@@ -1,5 +1,7 @@
 # markdown-go
 
+> npm 包名：`@willianqrunning/markdown-go`
+
 插件式 Markdown 渲染引擎。**最简单的逐行扫描，直接产出 HTML** —— 机制简单、插件好写、渲染快。
 
 ## 为什么是 markdown-go
@@ -26,13 +28,13 @@ Markdown 用 3~5 个最简单的语法补上这个缺口，**让作者聚焦内�
 ## 安装
 
 ```bash
-npm install markdown-go
+npm install @willianqrunning/markdown-go
 ```
 
 ## 快速开始
 
 ```js
-import MarkdownGo from "markdown-go";
+import MarkdownGo from "@willianqrunning/markdown-go";
 
 const md = new MarkdownGo();
 const { html, toc } = md.render("# 你好\n\n**粗体** 与 `代码`");
@@ -100,7 +102,7 @@ Token 类型（`types.js` 导出）：`HTML = 0`（已是 HTML 片段）、`TEXT
 插件可单独引入（子路径导出）：
 
 ```js
-import katex from "markdown-go/plugins/katex";
+import katex from "@willianqrunning/markdown-go/plugins/katex";
 md.use(katex);
 ```
 

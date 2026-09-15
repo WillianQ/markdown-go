@@ -1,5 +1,5 @@
 {
-  "name": "markdown-go",
+  "name": "@willianqrunning/markdown-go",
   "version": "0.1.0",
   "description": "插件式 Markdown 渲染引擎：标题编号 / TOC / 表格 / 列表 / 代码高亮 / KaTeX 公式 / ECharts 图表，纯字符串输出",
   "type": "module",
