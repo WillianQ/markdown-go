@@ -15,6 +15,9 @@
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "node test/table-escape.mjs && node test/toc.mjs && node test/decorate.mjs"
   },
