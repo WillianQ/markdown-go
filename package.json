@@ -16,7 +16,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node test/table-escape.mjs"
+    "test": "node test/table-escape.mjs && node test/toc.mjs"
   },
   "engines": {
     "node": ">=18"

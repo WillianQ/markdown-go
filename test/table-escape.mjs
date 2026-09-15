@@ -9,7 +9,7 @@ const src = [
   "| 2 | 管道\\|竖线 | end |",
 ].join("\n");
 
-const html = md.render(src);
+const { html } = md.render(src);
 console.log(html);
 
 // 断言：每行仍是 3 列；\| 还原为 |

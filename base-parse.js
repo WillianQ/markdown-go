@@ -6,7 +6,19 @@ import { HTML, TEXT, INLINE } from "./types.js";
 const initContextHeading = (context) => {
   context.headingInfo = [];
   context.headingList = [null];
+  context.usedAnchors = new Set();
   return context;
+};
+
+// 锚点与标题文字解耦：随机 8 位 base36（同一页面渲染多篇 md 也不冲突；中文/emoji/特殊字符都安全）；
+// 实例内 Set 去重兜底，避免极小概率撞车。
+const makeAnchor = (context) => {
+  let id;
+  do {
+    id = Math.random().toString(36).slice(2, 10).padEnd(8, "0");
+  } while (context.usedAnchors.has(id));
+  context.usedAnchors.add(id);
+  return id;
 };
 
 const blockHeading = (md, context, lines, pos) => {
@@ -24,12 +36,13 @@ const blockHeading = (md, context, lines, pos) => {
   }
   context.headingList[level] = context.headingList[level] + 1;
   const titleNum = context.headingList.slice(2).join(".");
-  context.headingInfo.push([level, titleNum, title]);
+  const anchor = makeAnchor(context);
+  context.headingInfo.push([level, titleNum, title, anchor]);
 
   return {
     startPos: pos,
     endPos: pos,
-    tokens: [{ tType: HTML, content: `<a name="${title}"><h${level}>${title}</h${level}></a>` }],
+    tokens: [{ tType: HTML, content: `<a name="${anchor}"><h${level}>${title}</h${level}></a>` }],
   };
 };
 
@@ -47,7 +60,7 @@ const inlineContents = (md, context, token) => {
   let level = 0;
 
   for (let i = 0; i < context.headingInfo.length; i++) {
-    const [lvl, titleNum, title] = context.headingInfo[i];
+    const [lvl, titleNum, title, anchor] = context.headingInfo[i];
     level = lvl;
     if (lvl > lastLevel) {
       for (let k = lastLevel; k < lvl; k++) tokens.push({ tType: HTML, content: "<ul>" });
@@ -56,7 +69,7 @@ const inlineContents = (md, context, token) => {
     }
     tokens.push({
       tType: HTML,
-      content: `<li><a href="#${title}">${titleNum} ${title}</a></li>`,
+      content: `<li><a href="#${anchor}">${titleNum} ${title}</a></li>`,
     });
     lastLevel = lvl;
   }
@@ -296,6 +309,10 @@ const inlineAnchor = (md, context, token) => {
   ];
 };
 
+// TOC 数据（结构化）：与 @[TOC] 内联渲染同源（headingInfo），供侧边栏等使用
+const buildToc = (headingInfo) =>
+  headingInfo.map(([level, num, title, anchor]) => ({ level, num, title, anchor }));
+
 export default {
   initContext: [initContextHeading],
   blockRules: [
@@ -319,4 +336,7 @@ export default {
     inlinePicture,
     inlineHtmlFont,
   ],
+  outputs: {
+    toc: (context) => buildToc(context.headingInfo),
+  },
 };

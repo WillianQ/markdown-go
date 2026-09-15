@@ -18,22 +18,38 @@ npm install markdown-go
 import MarkdownGo from "markdown-go";
 
 const md = new MarkdownGo();
-const html = md.render("# 你好\n\n**粗体** 与 `代码`");
+const { html, toc } = md.render("# 你好\n\n**粗体** 与 `代码`");
 
-// → <div class="markdown-body"><a name="你好"><h1>你好</h1></a>…</div>
+// html → <div class="markdown-body"><a name="3uk46pb2"><h1>你好</h1></a>…</div>
+// toc  → [{ level: 1, num: "", title: "你好", anchor: "3uk46pb2" }]
 ```
 
-输出**始终**包一层 `<div class="markdown-body">`，把样式挂在这个 class 上即可。
+`render()` 返回一个对象：`html`（**始终**包一层 `<div class="markdown-body">`，样式挂这个 class）+ 各插件声明的输出字段。
 
 ## API
 
 | 成员 | 说明 |
 |------|------|
 | `new MarkdownGo()` | 创建实例，**默认加载全部内置插件**（见下） |
-| `md.render(src)` | markdown 源码 → HTML 字符串 |
-| `md.use(plugin)` | 追加一个插件（`{ initContext, blockRules, inlineRules }`），规则为**追加**语义 |
+| `md.render(src)` | markdown 源码 → `{ html, toc, ...插件输出 }` |
+| `md.use(plugin)` | 追加一个插件，规则为**追加**语义 |
 
-自定义插件：
+### 输出字段
+
+| 字段 | 来源 | 说明 |
+|------|------|------|
+| `html` | 引擎 | 渲染好的 HTML 字符串 |
+| `toc` | `base-parse` | 目录数组，见下 |
+
+`toc` 元素：`{ level, num, title, anchor }`
+
+- `level`：1~5
+- `num`：自动编号（**level 1 为空串**，编号从 level 2 开始）
+- `anchor`：**随机 8 位 id**，与标题文字解耦 —— 同一页面渲染多篇 md 也不会撞，中文/emoji/特殊字符都安全。跳转用 `<a href="#${anchor}">`。
+
+文档里的 `@[TOC]` 占位符仍然可用（在文档内联位置渲染成目录树），与 `toc` 字段**同源**。
+
+自定义插件（可声明 `outputs` 往结果里加字段）：
 
 ```js
 md.use({
@@ -42,6 +58,11 @@ md.use({
     // 命中则返回 { startPos, endPos, tokens: [{ tType, content }] }，否则返回 undefined
   }],
   inlineRules: [],
+  outputs: {
+    // 解析完成后调用；(context, { html }) → 任意值，合并进 render() 的结果对象。
+    // key 冲突：后 use 的覆盖；产出函数抛错：该字段降级 undefined + warn，不崩。
+    headings: (ctx) => ctx.headingInfo.length,
+  },
 });
 ```
 
