@@ -1,6 +1,6 @@
 // katex 插件：行内公式 $$...$$（KaTeX 渲染，出错红色提示）
 // 老项目 plugin-katex.ts 的 JS 化（逻辑原样）
-import { HTML, INLINE } from "./types.js";
+import { HTML, INLINE } from "../types.js";
 import katex from "katex";
 // 注：katex.min.css 由使用方注入（本包保持纯解析，node 可直接 require 引擎）
 // 使用方（如 web 的 MarkdownRenderer）：import "katex/dist/katex.min.css"

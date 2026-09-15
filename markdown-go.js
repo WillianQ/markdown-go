@@ -4,10 +4,10 @@
 //       render 先块级切行、再行内逐 token 解析，全程带 try/catch 容错（坏块标红不崩）。
 import { HTML, INLINE } from "./types.js";
 import baseParse from "./base-parse.js";
-import pluginFontDecorate from "./plugin-font-decorate.js";
-import pluginHighlightCode from "./plugin-highlight-code.js";
-import pluginEcharts from "./plugin-echarts.js";
-import pluginKatex from "./plugin-katex.js";
+import pluginFontDecorate from "./plugins/font-decorate.js";
+import pluginHighlightCode from "./plugins/highlight-code.js";
+import pluginEcharts from "./plugins/echarts.js";
+import pluginKatex from "./plugins/katex.js";
 
 export default class MarkdownGo {
   initContext = [];

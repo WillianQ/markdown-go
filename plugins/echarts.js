@@ -1,6 +1,6 @@
 // echarts 插件：```echarts 块 —— 表格数据 + JSON 配置渲染图表（挂 setTimeout 等 DOM 就绪）
 // 老项目 plugin-echarts.ts 的 JS 化（EchartsOption 接口剥掉，逻辑原样）
-import { HTML, colorMap } from "./types.js";
+import { HTML, colorMap } from "../types.js";
 import * as echarts from "echarts/core";
 import { LineChart, BarChart, PieChart } from "echarts/charts";
 import {

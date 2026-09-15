@@ -1,6 +1,6 @@
 // highlight-code 插件：```js / ```python / ```json / ```sql 代码高亮（hljs 按需注册四种语言）
 // 老项目 plugin-highlight-code.ts 的 JS 化（逻辑原样）
-import { HTML } from "./types.js";
+import { HTML } from "../types.js";
 import hljs from "highlight.js/lib/core";
 import javascript from "highlight.js/lib/languages/javascript";
 import python from "highlight.js/lib/languages/python";

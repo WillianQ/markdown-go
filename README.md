@@ -69,10 +69,17 @@ Token 类型（`types.js` 导出）：`HTML = 0`（已是 HTML 片段）、`TEXT
 | 插件 | 文件 | 依赖 |
 |------|------|------|
 | 基础解析（标题/TOC/表格/列表/引用/围栏/分隔线/段落 + 行内） | `base-parse.js` | 无 |
-| 字体装饰 | `plugin-font-decorate.js` | 无 |
-| 代码高亮 | `plugin-highlight-code.js` | `highlight.js`（内置 js / python / json / sql） |
-| KaTeX 公式 | `plugin-katex.js` | `katex` |
-| ECharts 图表 | `plugin-echarts.js` | `echarts` |
+| 字体装饰 | `plugins/font-decorate.js` | 无 |
+| 代码高亮 | `plugins/highlight-code.js` | `highlight.js`（内置 js / python / json / sql） |
+| KaTeX 公式 | `plugins/katex.js` | `katex` |
+| ECharts 图表 | `plugins/echarts.js` | `echarts` |
+
+插件可单独引入（子路径导出）：
+
+```js
+import katex from "markdown-go/plugins/katex";
+md.use(katex);
+```
 
 > ⚠️ 默认实例会加载**全部**插件，因此这三个依赖是 `dependencies`。若只用基础解析，仍会装它们。
 

@@ -6,10 +6,12 @@
   "license": "MIT",
   "main": "./markdown-go.js",
   "exports": {
-    ".": "./markdown-go.js"
+    ".": "./markdown-go.js",
+    "./plugins/*": "./plugins/*.js"
   },
   "files": [
     "*.js",
+    "plugins/*.js",
     "README.md",
     "LICENSE"
   ],

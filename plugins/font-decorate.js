@@ -1,6 +1,6 @@
 // font-decorate 插件：**粗** ==标黄== ~~删除~~ ++下划++；以及 [text]{* 粗 = 黄 ~ 删 + 下划线 颜色 字号px} 富装饰
 // 老项目 plugin-font-decorate.ts 的 JS 化（satisfies Plugin 剥掉，逻辑原样）
-import { HTML, INLINE, colorMap } from "./types.js";
+import { HTML, INLINE, colorMap } from "../types.js";
 
 const htmlControl = { "**": "b", "==": "mark", "~~": "s", "++": "u" };
 
