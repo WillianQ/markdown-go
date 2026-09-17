@@ -78,8 +78,32 @@ const checks = [
   ["```html 高亮", r("```html\n<b>x</b>\n```").includes("hljs-tag")],
   ["未知语言自动评估", /class="hljs-/.test(r("```foobar\nfunction f(){ return 1; }\n```"))],
   ["裸 ``` 当文字", r("```").includes("<p>```</p>")],
+  ["无语言围栏当代码", (() => {
+    const h = r("```\nabc\n```");
+    return h.includes('<pre class="hljs"><code>') && h.includes("abc") && !h.includes("<p>```</p>");
+  })()],
+  ["落单 ``` 不吞后续围栏", (() => {
+    const h = r("前\n```\n后\n\n```js\nconst a=1;\n```");
+    return h.includes("<p>```</p>") && h.includes("hljs-keyword");
+  })()],
   ["围栏 <script> 转义", !r("```jsx\n<script>alert(1)</script>\n```").includes("<script>")],
   ["围栏 <img> 转义", !r("```html\n<img src=x onerror=alert(1)>\n```").includes("<img")],
+
+  // 行内代码 + 原文 HTML 转义（原文不能变成真标签）
+  ["行内代码", r("`abc`").includes("<code>abc</code>")],
+  ["行内代码内不解析装饰", r("`**x**`").includes("<code>**x**</code>")],
+  ["行内代码转义 HTML", (() => {
+    const h = r("`<button></button>`");
+    return h.includes("&lt;button&gt;") && !h.includes("<button>");
+  })()],
+  ["原文 HTML 转义", (() => {
+    const h = r("<button>x</button>");
+    return h.includes("&lt;button&gt;") && !h.includes("<button>");
+  })()],
+  ["加粗内 HTML 转义", !r("**<button></button>**").includes("<button>")],
+  ["富装饰内 HTML 转义", !r("[<button></button>]{*}").includes("<button>")],
+  ["链接文字 HTML 转义", !r("[<button></button>](https://e.com)").includes("<button>")],
+  ["引用续行 HTML 转义", !r("> a\n> <button></button>").includes("<button>")],
 
   // echarts
   ["echarts 优先", r("```echarts\n----\n|t|x|\n|-|-|\n|1|2|\n----\n\"title\":{\"text\":\"t\"}\n```").includes("echarts-")],
@@ -110,6 +134,10 @@ const sample = [
   "成对符号：**加粗**、==高亮==、~~删除~~、++斜体++、__下划线__。",
   "",
   "富装饰：方括号加大括号，符号只写一次 —— [加粗]{*}、[红字]{r}、[大字]{20}、[组合]{*r 20}。",
+  "",
+  "行内代码：`abc`、`**不是加粗**`、`<button></button>`（反引号里的内容原样显示）。",
+  "",
+  "原文 HTML 不能变成真标签：<button>点我</button>、<script>alert(1)</script>。",
   "",
   "## 链接与图片",
   "",
@@ -166,11 +194,21 @@ const sample = [
   "<img src=x onerror=alert(1)>",
   "```",
   "",
+  "无语言围栏同样是代码块：",
+  "",
+  "```",
+  "plain text, no language",
+  "```",
+  "",
   "裸三反引号当文字：",
   "",
   "前一行",
   "```",
-  "后一行",
+  "后1行",
+  "后2行",
+  "",
+  "后3行",
+  "```",
   "",
   "## KaTeX 公式",
   "",
@@ -226,6 +264,7 @@ tr.bad { background: #ffebe9; }
 .markdown-body th, .markdown-body td { border: 1px solid #d0d7de; padding: 4px 10px; }
 .markdown-body h1, .markdown-body h2, .markdown-body h3 { border-bottom: 1px solid #eaecef; padding-bottom: .3em; }
 hr { margin: 2rem 0; border: 0; border-top: 2px dashed #d0d7de; }
+.sample-source { background: #eaf3ff; border: 1px solid #b6d4fe; border-radius: 6px; padding: 1em; white-space: pre-wrap; word-break: break-word; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 90%; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -237,6 +276,9 @@ ${checksHtml}
 <hr>
 <h1>渲染样例</h1>
 ${html}
+<hr>
+<h1>样例源码</h1>
+<pre class="sample-source">${esc(sample)}</pre>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.6.0/dist/echarts.min.js"></script>
 <script>
   document.querySelectorAll("[data-echarts]").forEach(function (el) {

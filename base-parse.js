@@ -42,7 +42,7 @@ const blockHeading = (md, context, lines, pos) => {
   return {
     startPos: pos,
     endPos: pos,
-    tokens: [{ tType: HTML, content: `<a name="${anchor}"><h${level}>${title}</h${level}></a>` }],
+    tokens: [{ tType: HTML, content: `<a name="${anchor}"><h${level}>${escapeHtml(title)}</h${level}></a>` }],
   };
 };
 
@@ -69,7 +69,7 @@ const inlineContents = (md, context, token) => {
     }
     tokens.push({
       tType: HTML,
-      content: `<li><a href="#${anchor}">${titleNum} ${title}</a></li>`,
+      content: `<li><a href="#${anchor}">${titleNum} ${escapeHtml(title)}</a></li>`,
     });
     lastLevel = lvl;
   }
@@ -167,11 +167,14 @@ const blockBlockquote = (md, context, lines, pos) => {
   while (pos < lines.length) {
     const r = lines[pos].match(/^>(.*)$/);
     if (!r) break;
-    tokens.push(
-      { tType: HTML, content: "<p>" },
-      { tType: HTML, content: r[1] === "" ? "<br>" : r[1] },
-      { tType: HTML, content: "</p>" }
-    );
+    tokens.push({ tType: HTML, content: "<p>" });
+    // 引用续行同样走行内解析（否则原文 <button> 会被当标签输出）
+    if (r[1] === "") {
+      tokens.push({ tType: HTML, content: "<br>" });
+    } else {
+      tokens.push({ tType: INLINE, content: r[1] });
+    }
+    tokens.push({ tType: HTML, content: "</p>" });
     pos++;
   }
 
@@ -183,19 +186,28 @@ const blockBlockquote = (md, context, lines, pos) => {
 const escapeHtml = (s) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-// 兜底代码围栏：```xxx（xxx 非空）整段原样当 code（转义、不参与行内解析）。
+// 属性值转义：在 escapeHtml 基础上补上双引号，防止从 href/src 里逃逸出属性
+const escapeAttr = (s) => escapeHtml(s).replace(/"/g, "&quot;");
+
+// 兜底代码围栏：```xxx（xxx 可空）整段原样当 code（转义、不参与行内解析）。
 // 默认实例里 highlight-code 插件优先级更高，会先接住所有 ```xxx 并高亮；
-// 这里只在未加载 highlight-code 时兜底。裸 ```（无任何内容）交给 blockParagraph 当文字。
+// 这里只在未加载 highlight-code 时兜底。落单的裸 ```（没有配对结束符）交给 blockParagraph 当文字。
 const blockFence = (md, context, lines, pos) => {
-  if (!lines[pos].match(/^```\S+$/)) return;
+  const r = lines[pos].match(/^```(\S*)$/);
+  if (!r) return;
 
   const startPos = pos;
   let raw = "";
   pos++;
   while (pos < lines.length && !lines[pos].match(/^```$/)) {
+    // 无语言围栏：扫描中遇到另一个围栏开始说明当前 ``` 不是围栏（避免吞掉后续内容）。
+    if (!r[1] && lines[pos].match(/^```\S+$/)) return;
     raw += lines[pos] + "\n";
     pos++;
   }
+
+  // 无语言的裸 ``` 必须有配对的结束 ```，否则当普通文字。
+  if (!r[1] && pos >= lines.length) return;
 
   return {
     startPos,
@@ -236,7 +248,7 @@ const inlineItalic = (_, __, token) => {
   const [, frontPart, text, backPart] = r;
   return [
     { tType: INLINE, content: frontPart },
-    { tType: HTML, content: `<em>${text}</em>` },
+    { tType: HTML, content: `<em>${escapeHtml(text)}</em>` },
     { tType: INLINE, content: backPart },
   ];
 };
@@ -262,7 +274,7 @@ const inlinePicture = (md, context, token) => {
   const finalSrc = src.includes("/") ? src : `/api/file/download?id=${src}`;
   return [
     { tType: INLINE, content: frontPart },
-    { tType: HTML, content: `<img src="${finalSrc}" ${style}></img>` },
+    { tType: HTML, content: `<img src="${escapeAttr(finalSrc)}" ${style}></img>` },
     { tType: INLINE, content: backPart },
   ];
 };
@@ -297,7 +309,7 @@ const inlineResource = (md, context, token) => {
   const finalSrc = src.includes("/") ? src : `/article?id=${src}`;
   return [
     { tType: INLINE, content: frontPart },
-    { tType: HTML, content: `<a href="${finalSrc}" target="_blank">「${name}」</a>` },
+    { tType: HTML, content: `<a href="${escapeAttr(finalSrc)}" target="_blank">「${escapeHtml(name)}」</a>` },
     { tType: INLINE, content: backPart },
   ];
 };
@@ -310,7 +322,7 @@ const inlineAnchor = (md, context, token) => {
   const finalSrc = src.includes("/") ? src : `/api/file/download?id=${src}`;
   return [
     { tType: INLINE, content: frontPart },
-    { tType: HTML, content: `<a href="${finalSrc}" target="_blank">「${name}」</a>` },
+    { tType: HTML, content: `<a href="${escapeAttr(finalSrc)}" target="_blank">「${escapeHtml(name)}」</a>` },
     { tType: INLINE, content: backPart },
   ];
 };

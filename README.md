@@ -98,6 +98,7 @@ Token 类型（`types.js` 导出）：`HTML = 0`（已是 HTML 片段）、`TEXT
 | 代码高亮 | `plugins/highlight-code.js` | `highlight.js`（内置 js / python / json / sql） |
 | KaTeX 公式 | `plugins/katex.js` | `katex` |
 | ECharts 图表 | `plugins/echarts.js` | `echarts` |
+| 行内代码 | `plugins/inline-code.js` | 无 |
 
 插件可单独引入（子路径导出）：
 
@@ -115,13 +116,13 @@ md.use(katex);
 默认实例的加载顺序是：
 
 ```
-base-parse → font-decorate → highlight-code → echarts → katex
+base-parse → font-decorate → highlight-code → echarts → katex → inline-code
 ```
 
 所以匹配优先级正好相反：
 
 ```
-katex > echarts > highlight-code > font-decorate > base-parse
+inline-code > katex > echarts > highlight-code > font-decorate > base-parse
 ```
 
 **顺序会影响结果，不是随便排的。** 例如某个插件会改写代码围栏的内容，就必须装在"代码高亮"**之前**（即优先级更低），否则高亮拿不到原始代码。
@@ -210,6 +211,14 @@ const a = 1;
 ```md
 ---
 ```
+
+### 行内代码
+
+```md
+单行代码 `abc`，里面的符号原样显示：`**不是加粗**`、`<button></button>`。
+```
+
+反引号里的内容做 HTML 转义后放进 `<code>`，不参与其它行内解析（装饰 / 公式 / 原文 HTML 都不生效）。
 
 ### 行内装饰
 

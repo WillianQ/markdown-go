@@ -3,12 +3,18 @@
 //       → { html: HTML string（外层 .markdown-body）, toc: [...], ...插件 outputs 产出 }
 // 设计：initContext/blockRules/inlineRules 三段数组，插件 use() 追加；
 //       render 先块级切行、再行内逐 token 解析，全程带 try/catch 容错（坏块标红不崩）。
-import { HTML, INLINE } from "./types.js";
+import { HTML, TEXT, INLINE } from "./types.js";
 import baseParse from "./base-parse.js";
 import pluginFontDecorate from "./plugins/font-decorate.js";
 import pluginHighlightCode from "./plugins/highlight-code.js";
 import pluginEcharts from "./plugins/echarts.js";
 import pluginKatex from "./plugins/katex.js";
+import pluginInlineCode from "./plugins/inline-code.js";
+
+// TEXT token 是纯文本，输出前必须 HTML 转义（见 types.js / README），
+// 否则 <button> / <script> 这类原文会被浏览器当标签执行。
+const escapeText = (s) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export default class MarkdownGo {
   initContext = [];
@@ -29,6 +35,8 @@ export default class MarkdownGo {
     this.use(pluginHighlightCode);
     this.use(pluginEcharts);
     this.use(pluginKatex);
+    // 行内代码优先级最高：`` `**x**` `` 里的符号必须是字面量
+    this.use(pluginInlineCode);
   }
 
   render(src) {
@@ -99,7 +107,9 @@ export default class MarkdownGo {
     }
 
     const html =
-      '<div class="markdown-body">' + tokens.reduce((p, c) => p + c.content, "") + "</div>";
+      '<div class="markdown-body">' +
+      tokens.reduce((p, c) => p + (c.tType === TEXT ? escapeText(c.content) : c.content), "") +
+      "</div>";
 
     // 插件产出：outputs: { key: (context, { html }) => value }，按 use 顺序合并进结果对象。
     // 产出函数抛错 → 该字段降级 undefined + warn，不拖垮整篇渲染（与坏块容错同一哲学）。

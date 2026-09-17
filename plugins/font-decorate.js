@@ -6,6 +6,9 @@
 // 富装饰：[]{} 里每个符号只写 1 次即生效；另有 数字=字号(px)、颜色（单字母简写 / CSS 色名 / #hex）。
 import { HTML, INLINE, colorMap } from "../types.js";
 
+const escapeHtml = (s) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
 const htmlControl = {
   "**": "b", // 加粗
   "==": "mark", // 高亮
@@ -70,7 +73,7 @@ const inlineFontDecorate2 = (_, __, token) => {
 
   return [
     { tType: INLINE, content: frontPart },
-    { tType: HTML, content: `<span style="${style}">${midPart}</span>` },
+    { tType: HTML, content: `<span style="${style}">${escapeHtml(midPart)}</span>` },
     { tType: INLINE, content: backPart },
   ];
 };
