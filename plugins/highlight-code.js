@@ -13,11 +13,12 @@ hljs.registerLanguage("json", json);
 hljs.registerLanguage("sql", sql);
 
 const blockHighlightCode = (_, __, lines, pos) => {
-  const r1 = lines[pos].match(/^```code\:*(\S*)$/);
-  const r2 = lines[pos].match(/^```(python|js|json|sql)$/);
-  if (!r1 && !r2) return;
+  // 只认已注册的 4 种语言；其余（jsx/html/ts…）交给 base-parse 的 blockFence 兜底当代码。
+  // 不再有 ```code / ```code:xx 语法（已废弃）。
+  const r = lines[pos].match(/^```(python|js|json|sql)$/);
+  if (!r) return;
 
-  const language = r1?.[1] || r2?.[1] || "code";
+  const language = r[1];
   const startPos = pos;
 
   let code = "";
@@ -27,8 +28,7 @@ const blockHighlightCode = (_, __, lines, pos) => {
     pos++;
   }
 
-  const htmlHighlight =
-    language === "code" ? hljs.highlightAuto(code).value : hljs.highlight(code, { language }).value;
+  const htmlHighlight = hljs.highlight(code, { language }).value;
 
   return {
     startPos,

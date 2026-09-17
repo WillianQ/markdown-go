@@ -38,6 +38,8 @@ const defaultOption = {
 };
 
 const blockEcharts = (md, context, lines, pos) => {
+  // 优先级最高：echarts 插件最后 use()，render 从数组末尾往前匹配，
+  // 因此 ```echarts 一定先于 highlight-code / blockFence 被判断。
   if (!lines[pos].match(/^```echarts$/)) return;
 
   const startPos = pos;
@@ -60,7 +62,8 @@ const blockEcharts = (md, context, lines, pos) => {
       { tType: HTML, content: `<div id="${id}" style="width:${option.width}px;height:${option.height}px"></div>` },
     ];
     if (!option.hiddentable && rawTable) {
-      tokens.push({ tType: HTML, content: md.render(rawTable.replace(/(\{.*?\}\|)/g, "|")) });
+      // md.render() 返回 { html, toc }，必须取 .html，否则对象被拼成 "[object Object]"
+      tokens.push({ tType: HTML, content: md.render(rawTable.replace(/(\{.*?\}\|)/g, "|")).html });
     }
 
     setTimeout(() => {

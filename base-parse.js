@@ -179,9 +179,14 @@ const blockBlockquote = (md, context, lines, pos) => {
   return { startPos, endPos: pos - 1, tokens };
 };
 
-// 无语言围栏：整段原样当 code（不参与行内解析）
+// HTML 转义：代码围栏内容必须原样展示，不能当 HTML 解析（否则 <Input.../> 会变成真 HTML / 可注入）
+const escapeHtml = (s) =>
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// 兜底代码围栏：```xxx（xxx 非空，如 jsx/html/ts）整段原样当 code（转义、不参与行内解析）。
+// 裸 ```（无任何内容）不是围栏开头，交给 blockParagraph 当文字。
 const blockFence = (md, context, lines, pos) => {
-  if (!lines[pos].match(/^```\S*$/)) return;
+  if (!lines[pos].match(/^```\S+$/)) return;
 
   const startPos = pos;
   let raw = "";
@@ -194,7 +199,7 @@ const blockFence = (md, context, lines, pos) => {
   return {
     startPos,
     endPos: pos,
-    tokens: [{ tType: HTML, content: `<pre class="hljs"><code>${raw}</code></pre>` }],
+    tokens: [{ tType: HTML, content: `<pre class="hljs"><code>${escapeHtml(raw)}</code></pre>` }],
   };
 };
 
