@@ -1,21 +1,15 @@
-// highlight-code 插件：```js / ```python / ```json / ```sql 代码高亮（hljs 按需注册四种语言）
-// 老项目 plugin-highlight-code.ts 的 JS 化（逻辑原样）
+// highlight-code 插件：```xxx 代码高亮。
+// 不写死语言名：除 ```echarts（由 echarts 插件以更高优先级处理）外，
+// 任何 ```xxx 都交给 hljs —— 名字已知就按名字高亮，名字未知就 highlightAuto 自动评估。
+// 裸 ```（后面没内容）不在这里，由 base-parse 当文字处理。
 import { HTML } from "../types.js";
-import hljs from "highlight.js/lib/core";
-import javascript from "highlight.js/lib/languages/javascript";
-import python from "highlight.js/lib/languages/python";
-import json from "highlight.js/lib/languages/json";
-import sql from "highlight.js/lib/languages/sql";
-
-hljs.registerLanguage("javascript", javascript);
-hljs.registerLanguage("python", python);
-hljs.registerLanguage("json", json);
-hljs.registerLanguage("sql", sql);
+// common 内置 ~35 种常用语言（含 html/xml、typescript、go、rust、bash、css…）。
+// 想要全部 386 种：改成 import hljs from "highlight.js"；
+// 想回到最小体积：改成 highlight.js/lib/core + 按需 registerLanguage。
+import hljs from "highlight.js/lib/common";
 
 const blockHighlightCode = (_, __, lines, pos) => {
-  // 只认已注册的 4 种语言；其余（jsx/html/ts…）交给 base-parse 的 blockFence 兜底当代码。
-  // 不再有 ```code / ```code:xx 语法（已废弃）。
-  const r = lines[pos].match(/^```(python|js|json|sql)$/);
+  const r = lines[pos].match(/^```(\S+)$/);
   if (!r) return;
 
   const language = r[1];
@@ -28,7 +22,11 @@ const blockHighlightCode = (_, __, lines, pos) => {
     pos++;
   }
 
-  const htmlHighlight = hljs.highlight(code, { language }).value;
+  // 名字已知（含别名，如 jsx→javascript、py→python）→ 按名字高亮；
+  // 名字未知 → highlightAuto 从内容自动评估。
+  const htmlHighlight = hljs.getLanguage(language)
+    ? hljs.highlight(code, { language, ignoreIllegals: true }).value
+    : hljs.highlightAuto(code).value;
 
   return {
     startPos,

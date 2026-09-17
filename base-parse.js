@@ -183,8 +183,9 @@ const blockBlockquote = (md, context, lines, pos) => {
 const escapeHtml = (s) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-// 兜底代码围栏：```xxx（xxx 非空，如 jsx/html/ts）整段原样当 code（转义、不参与行内解析）。
-// 裸 ```（无任何内容）不是围栏开头，交给 blockParagraph 当文字。
+// 兜底代码围栏：```xxx（xxx 非空）整段原样当 code（转义、不参与行内解析）。
+// 默认实例里 highlight-code 插件优先级更高，会先接住所有 ```xxx 并高亮；
+// 这里只在未加载 highlight-code 时兜底。裸 ```（无任何内容）交给 blockParagraph 当文字。
 const blockFence = (md, context, lines, pos) => {
   if (!lines[pos].match(/^```\S+$/)) return;
 

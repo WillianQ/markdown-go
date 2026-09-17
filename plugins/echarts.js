@@ -37,6 +37,31 @@ const defaultOption = {
   legend: { bottom: 0 },
 };
 
+// 属性值转义（JSON 里含双引号）
+const escapeAttr = (s) =>
+  s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// 表格数据 + 配置 → 最终 option（Node / 浏览器共用，保证 data 属性与 setTimeout 一致）
+const buildOption = (option, rawTable) => {
+  if (!rawTable) return option;
+  const getData = (l) => l.split("|").slice(1, -1);
+  let data = rawTable.split("\n").map(getData);
+  data.splice(1, 1);
+
+  if (option.axis === 1) data = data[0].map((_, i) => data.map((row) => row[i]));
+  if (option.reverse) data = [data[0], ...data.slice(1).reverse()];
+
+  if (!option.series) {
+    option.series = data[0].slice(1).map((h) => {
+      const m = h.match(/([^{]*)(\{.*\})?/);
+      return { name: m?.[1] || h, type: "line", ...(m?.[2] ? JSON.parse(m[2]) : {}) };
+    });
+  }
+  option.title = { ...option.title, text: data[0][0] };
+  option.dataset = { source: data };
+  return option;
+};
+
 const blockEcharts = (md, context, lines, pos) => {
   // 优先级最高：echarts 插件最后 use()，render 从数组末尾往前匹配，
   // 因此 ```echarts 一定先于 highlight-code / blockFence 被判断。
@@ -58,42 +83,28 @@ const blockEcharts = (md, context, lines, pos) => {
     const option = { ...defaultOption, ...JSON.parse(`{${rawOpt}}`) };
     const id = `echarts-${parseInt(String(Math.random() * 1e10), 10)}`;
 
+    // 先把最终 option 算好（含 dataset/series/title），写进 data 属性：
+    // 这样 SSR 输出的 HTML 只要前端引一段脚本就能初始化图表。
+    const finalOption = buildOption({ ...option }, rawTable);
+    delete finalOption.width;
+    delete finalOption.height;
+
     const tokens = [
-      { tType: HTML, content: `<div id="${id}" style="width:${option.width}px;height:${option.height}px"></div>` },
+      {
+        tType: HTML,
+        content: `<div id="${id}" data-echarts="${escapeAttr(JSON.stringify(finalOption))}" style="width:${option.width}px;height:${option.height}px"></div>`,
+      },
     ];
     if (!option.hiddentable && rawTable) {
       // md.render() 返回 { html, toc }，必须取 .html，否则对象被拼成 "[object Object]"
       tokens.push({ tType: HTML, content: md.render(rawTable.replace(/(\{.*?\}\|)/g, "|")).html });
     }
 
+    // 浏览器里 render() 时直接初始化（setTimeout 等 DOM 就绪）
     setTimeout(() => {
       const div = document.getElementById(id);
       if (!div) return;
-
-      if (rawTable) {
-        const getData = (l) => l.split("|").slice(1, -1);
-        let data = rawTable.split("\n").map(getData);
-        data.splice(1, 1);
-
-        if (option.axis === 1) {
-          data = data[0].map((_, i) => data.map((row) => row[i]));
-        }
-        if (option.reverse) data = [data[0], ...data.slice(1).reverse()];
-
-        if (!option.series) {
-          option.series = data[0].slice(1).map((h, i) => {
-            const m = h.match(/([^{]*)(\{.*\})?/);
-            return { name: m?.[1] || h, type: "line", ...(m?.[2] ? JSON.parse(m[2]) : {}) };
-          });
-        }
-        option.title = { ...option.title, text: data[0][0] };
-        option.dataset = { source: data };
-      }
-
-      const chart = echarts.init(div);
-      delete option.width;
-      delete option.height;
-      chart.setOption(option);
+      echarts.init(div).setOption(finalOption);
     }, 500);
 
     return { startPos, endPos: pos, tokens };
