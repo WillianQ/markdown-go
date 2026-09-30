@@ -140,6 +140,25 @@ import "highlight.js/styles/github.css";        // 代码高亮主题（任选�
 
 `.markdown-body` 的排版样式也由使用方提供。
 
+## 块行号（data-start-line / data-end-line）
+
+每个顶层块的元素上都带**它在原文里的行号范围**（1-based，含起含终）—— 给"按块定位"的交互用（预览里点一段 → 从这一行开始读、左侧行号列、朗读进度高亮…）。
+
+```html
+<a data-start-line="3" data-end-line="3" name="ab12cd34"><h1>标题一</h1></a>
+<p data-start-line="5" data-end-line="5">第一段。</p>
+<ul data-start-line="7" data-end-line="8"><li>项一</li><li>项二</li></ul>
+<pre data-start-line="10" data-end-line="12" class="hljs">…</pre>
+```
+
+几条规矩：
+
+- **只标顶层块**。列表的 `<li>`、表格的 `<tr>`、引用里的 `<p>` 一律不标（要更细的粒度得改对应块规则）。
+- **段落是"一行一段"**（引擎的逐行扫描机制）—— 连续两行文字会渲染成两个 `<p>`，各自带自己的行号。
+- **行号覆盖到块的整个范围**：代码块含上下两条 ` ``` ` 标记行；空行不属于任何块（所以行号会跳号）。
+- **每个块都有**：注释块（本来不产出 DOM）和 `@[TOC]`（元素要等行内阶段才生成）也不会漏 —— 前者补一个空 `<i>` 锚点，后者把属性贴到它生成的第一个 `<ul>` 上。
+- 前端直接 `container.querySelectorAll('[data-start-line]')` 就能拿到全部块，**不用特判**。
+
 ## 内置语法
 
 > 下列语法由内置插件提供，均为默认启用。

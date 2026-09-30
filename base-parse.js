@@ -58,12 +58,16 @@ const inlineContents = (md, context, token) => {
   let lastLevel = 0;
   const tokens = [];
   let level = 0;
+  let attrs = token.blockAttrs ? ` ${token.blockAttrs}` : ""; // 块行号（首个 <ul> 用一次就摘掉）
 
   for (let i = 0; i < context.headingInfo.length; i++) {
     const [lvl, titleNum, title, anchor] = context.headingInfo[i];
     level = lvl;
     if (lvl > lastLevel) {
-      for (let k = lastLevel; k < lvl; k++) tokens.push({ tType: HTML, content: "<ul>" });
+      for (let k = lastLevel; k < lvl; k++) {
+        tokens.push({ tType: HTML, content: `<ul${attrs}>` });
+        attrs = "";
+      }
     } else if (lvl < lastLevel) {
       for (let k = lastLevel; k > lvl; k--) tokens.push({ tType: HTML, content: "</ul>" });
     }

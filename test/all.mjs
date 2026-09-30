@@ -13,9 +13,63 @@ globalThis.document = { getElementById: () => null };
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const md = new MarkdownGo();
-const r = (s) => md.render(s).html;
+// 断言用渲染。★ 先剥掉块行号属性（data-start-line / data-end-line）——
+//   下面这些断言验的是**结构**，不是属性；属性本身由末尾那组「块行号」断言专门验。
+//   （不剥的话，`<ul><li>a</li></ul>` 这类写死的期望串会因多两个属性全挂）
+const r = (s) => md.render(s).html.replace(/ data-(?:start|end)-line="\d+"/g, "");
+// 带属性的原样输出（块行号断言用）
+const raw = (s) => md.render(s).html;
 // 报告页里插入断言名也要转义（名字里含 <script> 这类字符）
 const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+// 顶层开标签（去掉 .markdown-body 包裹后按深度扫）—— 块行号断言用
+const topLevelTags = (html) => {
+  const body = html.replace(/^<div class="markdown-body">/, "").replace(/<\/div>$/, "");
+  const out = [];
+  let depth = 0;
+  const re = /<(\/?)([a-zA-Z][\w-]*)([^>]*)>/g;
+  let m;
+  while ((m = re.exec(body))) {
+    if (m[1]) {
+      depth--;
+      continue;
+    }
+    if (depth === 0) out.push(m[0]);
+    if (!/^<(hr|br)\b/i.test(m[0])) depth++; // 空元素不进深度
+  }
+  return out;
+};
+const blockRanges = (html) =>
+  topLevelTags(html).map((t) => [
+    +t.match(/data-start-line="(\d+)"/)?.[1],
+    +t.match(/data-end-line="(\d+)"/)?.[1],
+  ]);
+// 覆盖全部块类型的文档（含没有 token 的注释块 / 行内阶段才生成元素的 [TOC]）
+const BLOCK_DOC = [
+  "<!-- 注释块 -->",
+  "",
+  "# 标题一",
+  "",
+  "第一段。",
+  "",
+  "- 项一",
+  "- 项二",
+  "",
+  "> 引用一",
+  "> 引用二",
+  "",
+  "| a | b |",
+  "|---|---|",
+  "| 1 | 2 |",
+  "",
+  "---",
+  "",
+  "```js",
+  "const a = 1;",
+  "```",
+  "",
+  "@[TOC]",
+].join("\n");
 
 // ---------------------------------------------------------------------------
 // 1. 断言
@@ -120,6 +174,27 @@ const checks = [
     }
   })()],
 ];
+
+// 块行号（data-start-line / data-end-line）—— 结构性断言，不逐个块写死
+const ranges = blockRanges(raw(BLOCK_DOC));
+checks.push(
+  ["块行号：每个顶层块都带 data-start-line",
+    topLevelTags(raw(BLOCK_DOC)).every((t) => t.includes("data-start-line"))],
+  ["块行号：块数正确（9 块，含注释与 TOC）", ranges.length === 9],
+  ["块行号：范围不重叠且严格递增",
+    ranges.every(([s, e], i) => e >= s && (i === 0 || s > ranges[i - 1][1]))],
+  ["块行号：1-based，对得上原文（标题在第 3 行）", ranges[1][0] === 3],
+  ["块行号：列表整块一个范围，内层 <li> 不带",
+    (() => {
+      const h = raw("- a\n- b");
+      return /<ul data-start-line="1" data-end-line="2">/.test(h) && !h.includes("<li data-start-line");
+    })()],
+  ["块行号：@[TOC] 的 <ul> 自己带（不是靠兄弟锚点）",
+    (() => {
+      const h = raw("@[TOC]\n\n# A");
+      return /<ul data-start-line="1" data-end-line="1">/.test(h);
+    })()],
+);
 
 // ---------------------------------------------------------------------------
 // 2. 覆盖全部语法的综合样例

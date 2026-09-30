@@ -16,6 +16,27 @@ import pluginInlineCode from "./plugins/inline-code.js";
 const escapeText = (s) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
+// 元素开标签：<p / <h2 / <pre …（`</p>` 不会命中 —— `<` 后面必须是字母）
+const OPEN_TAG = /^<([a-zA-Z][\w-]*)/;
+
+/** 给块打行号属性（块级跟踪用）：能插进第一个元素开标签就插进去；
+ *  首 token 是 INLINE（如 [TOC]，元素要等行内阶段才生成）→ 挂在 token 上，由行内规则贴过去；
+ *  连 token 都没有（HTML 注释块）→ 补一个空 <i> 当锚点。
+ *  —— 保证"每个块都带 data-start-line"，前端遍历不用特判。 */
+function applyLineAttrs(tokens, startLine, endLine) {
+  const attrs = `data-start-line="${startLine}" data-end-line="${endLine}"`;
+  const t = tokens[0];
+  if (t && t.tType === HTML && typeof t.content === "string" && OPEN_TAG.test(t.content)) {
+    t.content = t.content.replace(OPEN_TAG, `<$1 ${attrs}`);
+    return;
+  }
+  if (t && t.tType === INLINE) {
+    t.blockAttrs = attrs;
+    return;
+  }
+  tokens.unshift({ tType: HTML, content: `<i ${attrs}></i>` });
+}
+
 export default class MarkdownGo {
   initContext = [];
   blockRules = [];
@@ -61,6 +82,7 @@ export default class MarkdownGo {
         try {
           const result = this.blockRules[i](this, context, lines, pos);
           if (result) {
+            applyLineAttrs(result.tokens, pos + 1, result.endPos + 1);
             tokens.push(...result.tokens);
             pos = result.endPos + 1;
             break;
