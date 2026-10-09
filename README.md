@@ -273,6 +273,33 @@ const a = 1;
 ![图片说明](https://example.com/a.png)
 ```
 
+`src` **原样输出**，引擎不做任何业务地址映射：`![图](abc)` → `<img src="abc">`、`[文](abc)` → `<a href="abc">`。
+
+需要把裸 id 映射成自己的接口地址（如 `/api/file/download?id=abc`）时，写一个插件覆盖对应行内规则即可。插件就是普通的 `{ initContext, blockRules, inlineRules }`，后 `use` 的规则优先级更高：
+
+```js
+md.use({
+  initContext: [],
+  blockRules: [],
+  inlineRules: [
+    // 数组顺序 = 优先级从低到高；这里覆盖 base-parse 的 [文](id)
+    (md, ctx, token) => {
+      const r = token.content.match(/(.*?)\[(.*?)\]\((\S*?)\)(.*)/);
+      if (!r) return;
+      const [, front, name, src, back] = r;
+      const href = src.includes("/") ? src : `/api/file/download?id=${src}`;
+      return [
+        { tType: 2, content: front },
+        { tType: 0, content: `<a href="${href}">${name}</a>` },
+        { tType: 2, content: back },
+      ];
+    },
+  ],
+});
+```
+
+> Token 常量（`HTML=0` / `TEXT=1` / `INLINE=2`）从 `@willianqrunning/markdown-go/types` 引入。
+
 ### KaTeX 公式
 
 ```md

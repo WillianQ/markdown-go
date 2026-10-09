@@ -120,8 +120,11 @@ const checks = [
 
   // 链接 / 站内资源 / 图片
   ["外链", r("[链接](https://e.com)").includes('href="https://e.com"')],
-  ["站内资源 $[]()", r("$[文章](42)").includes('href="/article?id=42"')],
+  ["站内资源 $[]() 裸 src", r("$[文章](42)").includes('href="42"')],
+  ["链接裸 src 原样输出", r("[文件](xyz)").includes('href="xyz"')],
   ["图片", r("![图](https://e.com/a.png)").includes("<img")],
+  ["图片裸 src 原样输出", r("![图](abc)").includes('src="abc"')],
+  ["图片尺寸属性闭合", r("![图](abc){300*200}").includes('style="max-width:300px;max-height:200px"')],
 
   // KaTeX
   ["KaTeX 公式", r("$$E=mc^2$$").includes("katex-inline")],

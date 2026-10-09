@@ -260,7 +260,7 @@ const inlineItalic = (_, __, token) => {
 // 兜底：什么规则都不认 → 原样输出
 const inlineText = (_, __, token) => [{ tType: TEXT, content: token.content }];
 
-// 图片：![name](src){宽*高}；src 无 / 视为本地资源 id
+// 图片：![name](src){宽*高}；src 原样输出（不做任何业务地址映射）
 const inlinePicture = (md, context, token) => {
   const r = token.content.match(/(.*?)\!\[(.*?)\]\((\S*?)\)(\{\S*?\})*(.*)/);
   if (!r) return;
@@ -272,13 +272,12 @@ const inlinePicture = (md, context, token) => {
     if (m) {
       const width = m[1];
       const height = m[2] || m[1];
-      style = `style="max-width:${width}px;max-height:${height}px`;
+      style = `style="max-width:${width}px;max-height:${height}px"`;
     }
   }
-  const finalSrc = src.includes("/") ? src : `/api/file/download?id=${src}`;
   return [
     { tType: INLINE, content: frontPart },
-    { tType: HTML, content: `<img src="${escapeAttr(finalSrc)}" ${style}></img>` },
+    { tType: HTML, content: `<img src="${escapeAttr(src)}" ${style}></img>` },
     { tType: INLINE, content: backPart },
   ];
 };
@@ -305,28 +304,26 @@ const inlineHtmlFont = (_, __, token) => {
   ];
 };
 
-// 资源链：$[name](src) 当作站内文章跳转
+// 资源链：$[name](src)；src 原样输出（不做任何业务地址映射）
 const inlineResource = (md, context, token) => {
   const r = token.content.match(/(.*?)\$\[(.*?)\]\((\S*?)\)(.*)/);
   if (!r) return;
   const [, frontPart, name, src, backPart] = r;
-  const finalSrc = src.includes("/") ? src : `/article?id=${src}`;
   return [
     { tType: INLINE, content: frontPart },
-    { tType: HTML, content: `<a href="${escapeAttr(finalSrc)}" target="_blank">「${escapeHtml(name)}」</a>` },
+    { tType: HTML, content: `<a href="${escapeAttr(src)}" target="_blank">「${escapeHtml(name)}」</a>` },
     { tType: INLINE, content: backPart },
   ];
 };
 
-// 链接：[name](src)；src 无 / 视为本地文件资源
+// 链接：[name](src)；src 原样输出（不做任何业务地址映射）
 const inlineAnchor = (md, context, token) => {
   const r = token.content.match(/(.*?)\[(.*?)\]\((\S*?)\)(.*)/);
   if (!r) return;
   const [, frontPart, name, src, backPart] = r;
-  const finalSrc = src.includes("/") ? src : `/api/file/download?id=${src}`;
   return [
     { tType: INLINE, content: frontPart },
-    { tType: HTML, content: `<a href="${escapeAttr(finalSrc)}" target="_blank">「${escapeHtml(name)}」</a>` },
+    { tType: HTML, content: `<a href="${escapeAttr(src)}" target="_blank">「${escapeHtml(name)}」</a>` },
     { tType: INLINE, content: backPart },
   ];
 };
