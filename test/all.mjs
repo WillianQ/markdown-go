@@ -164,6 +164,8 @@ const checks = [
 
   // echarts
   ["echarts 优先", r("```echarts\n----\n|t|x|\n|-|-|\n|1|2|\n----\n\"title\":{\"text\":\"t\"}\n```").includes("echarts-")],
+  ["echarts JS 字面量配置（无引号键/单引号/尾逗号）", !r("```echarts\n----\n|t|x|\n|-|-|\n|1|2|\n----\ntooltip:{trigger:'axis'},\n```").includes("Echarts 出错")],
+  ["echarts 表头 series JS 字面量", !r("```echarts\n----\n|t|销量{type:'bar'}|\n|-|-|\n|1|2|\n----\n\"title\":{\"text\":\"t\"}\n```").includes("Echarts 出错")],
   ["echarts 内嵌表格正常", !r("```echarts\n----\n|t|x|\n|-|-|\n|1|2|\n----\n\"title\":{\"text\":\"t\"}\n```").includes("[object Object]")],
   ["echarts 输出可初始化的 data-echarts", (() => {
     const h = r("```echarts\n----\n|t|x|\n|-|-|\n|1|2|\n----\n\"title\":{\"text\":\"t\"}\n```");

@@ -9,6 +9,7 @@ import {
   LegendComponent,
   DatasetComponent,
   GridComponent,
+  DataZoomComponent,
 } from "echarts/components";
 import { CanvasRenderer } from "echarts/renderers";
 
@@ -21,6 +22,7 @@ echarts.use([
   LegendComponent,
   DatasetComponent,
   GridComponent,
+  DataZoomComponent,
   CanvasRenderer,
 ]);
 
@@ -54,7 +56,7 @@ const buildOption = (option, rawTable) => {
   if (!option.series) {
     option.series = data[0].slice(1).map((h) => {
       const m = h.match(/([^{]*)(\{.*\})?/);
-      return { name: m?.[1] || h, type: "line", ...(m?.[2] ? JSON.parse(m[2]) : {}) };
+      return { name: m?.[1] || h, type: "line", ...(m?.[2] ? eval(`(${m[2]})`) : {}) };
     });
   }
   option.title = { ...option.title, text: data[0][0] };
@@ -80,7 +82,8 @@ const blockEcharts = (md, context, lines, pos) => {
     if (!match) throw new Error("Invalid format");
 
     const [, rawTable, rawOpt] = match;
-    const option = { ...defaultOption, ...JSON.parse(`{${rawOpt}}`) };
+    // 配置是手写 JS 字面量（无引号键 / 单引号 / 尾逗号），必须用 eval 而非 JSON.parse
+    const option = { ...defaultOption, ...eval(`({${rawOpt}})`)};
     const id = `echarts-${parseInt(String(Math.random() * 1e10), 10)}`;
 
     // 先把最终 option 算好（含 dataset/series/title），写进 data 属性：
